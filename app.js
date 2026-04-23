@@ -256,9 +256,13 @@ function highlightAc(items) {
 
 function selectFood(idx) {
   selectedFoodItem = FOOD_DATABASE[idx];
-  $('food-search').value = selectedFoodItem.name;
+  const input = $('food-search');
+  input.value = selectedFoodItem.name;
+  input.style.borderColor = 'var(--accent2)';
+  input.placeholder = 'Search food…';
   $('autocomplete-list').style.display = 'none';
   $('gram-amount').value = selectedFoodItem.serving;
+  $('add-food-btn').textContent = `Add "${selectedFoodItem.name}" to Log`;
   updatePreview();
 }
 
@@ -286,7 +290,7 @@ function addFood() {
 
   if (manualMode) {
     const name = $('manual-name').value.trim();
-    if (!name) { showToast('Please enter a food name'); return; }
+    if (!name) { showToast('⚠️ Enter a food name first'); return; }
     entry = {
       name,
       calories: parseFloat($('manual-cal').value)  || 0,
@@ -298,9 +302,15 @@ function addFood() {
       time: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
     };
   } else {
-    if (!selectedFoodItem) { showToast('Search for and select a food first'); return; }
-    const grams = parseFloat($('gram-amount').value);
-    if (!grams || grams <= 0) { showToast('Enter a valid amount'); return; }
+    if (!selectedFoodItem) {
+      $('food-search').style.borderColor = 'var(--danger)';
+      $('food-search').placeholder = '⚠️ Search and TAP a food from the list below';
+      $('food-search').focus();
+      showToast('⚠️ Tap a food from the dropdown list first');
+      return;
+    }
+    const grams = parseFloat($('gram-amount').value) || selectedFoodItem.serving;
+    $('gram-amount').value = grams;
     entry = scaleMacros(selectedFoodItem, grams);
   }
 
@@ -312,9 +322,11 @@ function addFood() {
 
   // Reset
   $('food-search').value = '';
+  $('food-search').style.borderColor = '';
   $('gram-amount').value = '';
   selectedFoodItem = null;
   $('food-preview').classList.remove('show');
+  $('add-food-btn').textContent = 'Add to Log';
   if (manualMode) clearManual();
 
   showToast(`Added: ${entry.name}`);
@@ -323,11 +335,9 @@ function addFood() {
 function removeEntry(idx) {
   const dk = state.currentDateKey;
   const entries = state.logs[dk] || [];
-  // idx is from reversed order display, so recalculate
-  const realIdx = entries.length - 1 - idx;
-  if (realIdx >= 0) {
-    const name = entries[realIdx].name;
-    state.logs[dk].splice(realIdx, 1);
+  if (idx >= 0 && idx < entries.length) {
+    const name = entries[idx].name;
+    state.logs[dk].splice(idx, 1);
     save();
     render();
     showToast(`Removed: ${name}`);
