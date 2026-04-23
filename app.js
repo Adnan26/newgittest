@@ -1,12 +1,52 @@
 'use strict';
 
+// ── USDA FoodData Central ─────────────────────────────────────────────────────
+const USDA_KEY = 'RjUf4ef2jacwHgau3UTQb82FTq4eZs3K1SnFHpUv';
+const USDA_URL = 'https://api.nal.usda.gov/fdc/v1/foods/search';
+const NID = { calories: 1008, fat: 1004, protein: 1003, carbs: 1005, fiber: 1079 };
+
+function getNutrient(nutrients, id) {
+  const n = nutrients.find(n => n.nutrientId === id);
+  return n ? round(n.value) : 0;
+}
+
+function parseUSDAFood(item) {
+  const n = item.foodNutrients || [];
+  return {
+    name: item.description
+      .split(' ')
+      .map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+      .join(' '),
+    calories: getNutrient(n, NID.calories),
+    fat:      getNutrient(n, NID.fat),
+    protein:  getNutrient(n, NID.protein),
+    carbs:    getNutrient(n, NID.carbs),
+    fiber:    getNutrient(n, NID.fiber),
+    serving:  100,
+    servingUnit: 'g',
+  };
+}
+
+async function searchUSDA(query) {
+  const params = new URLSearchParams({
+    query,
+    api_key: USDA_KEY,
+    dataType: 'Foundation,SR Legacy',
+    pageSize: 12,
+  });
+  const res = await fetch(`${USDA_URL}?${params}`);
+  if (!res.ok) throw new Error('USDA error');
+  const data = await res.json();
+  return (data.foods || []).map(parseUSDAFood);
+}
+
 // ── State ─────────────────────────────────────────────────────────────────────
 let state = {
   goalWeight: 185,
   currentDateKey: todayKey(),
-  logs: {},          // { "YYYY-MM-DD": [ entry, ... ] }
-  weights: [],       // [ { date, weight } ]
-  ketoLimit: 20,     // net carbs grams
+  logs: {},
+  weights: [],
+  ketoLimit: 20,
 };
 
 // ── Persistence ───────────────────────────────────────────────────────────────
@@ -212,6 +252,8 @@ function renderWeights() {
   }).join('');
 }
 
+let searchResults = [];
+
 // ── Amount helpers ────────────────────────────────────────────────────────────
 let lastAmountInput = 'grams';
 
@@ -236,25 +278,42 @@ let acIndex = -1;
 function setupAutocomplete() {
   const input = $('food-search');
   const list = $('autocomplete-list');
+  let searchTimer;
 
-  input.addEventListener('input', () => {
-    const q = input.value.trim().toLowerCase();
-    acIndex = -1;
-    if (q.length < 1) { list.style.display = 'none'; return; }
-    const matches = FOOD_DATABASE.filter(f => f.name.toLowerCase().includes(q)).slice(0, 10);
-    if (matches.length === 0) { list.style.display = 'none'; return; }
-    list.innerHTML = matches.map((f, i) => {
+  function showResults(results) {
+    searchResults = results;
+    if (results.length === 0) { list.style.display = 'none'; return; }
+    list.innerHTML = results.map((f, i) => {
       const nc = Math.max(0, f.carbs - f.fiber);
-      return `<div class="autocomplete-item" data-index="${i}" onclick="selectFood(${FOOD_DATABASE.indexOf(f)})">
+      return `<div class="autocomplete-item" onclick="selectFood(${i})">
         <span>${esc(f.name)}</span>
-        <span class="macro-hint">${f.calories}kcal · ${f.fat}g fat · ${nc}g net carbs / ${f.serving}${f.servingUnit.includes('g') ? 'g' : 'ml'}</span>
+        <span class="macro-hint">${f.calories}kcal · ${f.fat}g fat · ${nc}g net carbs / 100g</span>
       </div>`;
     }).join('');
     list.style.display = 'block';
+  }
+
+  input.addEventListener('input', () => {
+    const q = input.value.trim();
+    acIndex = -1;
+    clearTimeout(searchTimer);
+    if (q.length < 2) { list.style.display = 'none'; return; }
+
+    list.innerHTML = '<div class="autocomplete-item" style="color:var(--muted);cursor:default">Searching…</div>';
+    list.style.display = 'block';
+
+    searchTimer = setTimeout(async () => {
+      try {
+        const results = await searchUSDA(q);
+        if (results.length > 0) { showResults(results); return; }
+      } catch { /* fall through to local */ }
+      // Offline fallback
+      showResults(FOOD_DATABASE.filter(f => f.name.toLowerCase().includes(q.toLowerCase())).slice(0, 12));
+    }, 400);
   });
 
   input.addEventListener('keydown', e => {
-    const items = list.querySelectorAll('.autocomplete-item');
+    const items = list.querySelectorAll('.autocomplete-item[onclick]');
     if (e.key === 'ArrowDown') { acIndex = Math.min(acIndex + 1, items.length - 1); highlightAc(items); e.preventDefault(); }
     else if (e.key === 'ArrowUp') { acIndex = Math.max(acIndex - 1, -1); highlightAc(items); e.preventDefault(); }
     else if (e.key === 'Enter' && acIndex >= 0) { items[acIndex].click(); e.preventDefault(); }
@@ -272,7 +331,7 @@ function highlightAc(items) {
 }
 
 function selectFood(idx) {
-  selectedFoodItem = FOOD_DATABASE[idx];
+  selectedFoodItem = searchResults[idx];
   const input = $('food-search');
   input.value = selectedFoodItem.name;
   input.style.borderColor = 'var(--accent2)';
