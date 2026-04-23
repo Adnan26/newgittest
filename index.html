@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>KetoTrack — Macro Counter</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="app-wrapper">
+
+    <header>
+      <div class="logo">
+        <span>🥑</span>
+        <h1>KetoTrack</h1>
+      </div>
+      <div class="date-nav">
+        <button id="prev-day-btn" title="Previous day">&#8249;</button>
+        <span id="current-date-label">Today</span>
+        <button id="next-day-btn" title="Next day">&#8250;</button>
+        <button class="btn btn-sm btn-primary" id="today-btn" style="margin-left:4px">Today</button>
+      </div>
+    </header>
+
+    <!-- Goal banner -->
+    <div class="goal-banner">
+      <div class="goal-text">
+        Goal weight: <strong id="goal-display">185 lbs</strong>
+      </div>
+      <div class="goal-weight">
+        <label for="goal-weight-input">Goal weight (lbs)</label>
+        <input type="number" id="goal-weight-input" value="185" min="50" max="600" />
+        <button class="btn" id="save-goal-btn">Save</button>
+      </div>
+    </div>
+
+    <!-- Keto status -->
+    <div class="keto-status">
+      <span class="keto-badge" id="keto-badge">In Ketosis</span>
+      <span class="net-carbs-big" id="net-carbs-display">0g</span>
+      <span class="keto-status-text" id="keto-status-text">net carbs today</span>
+    </div>
+
+    <!-- Macro counters -->
+    <div class="macro-grid">
+      <div class="macro-card calories">
+        <div class="macro-label">Calories</div>
+        <div class="macro-value">0 <span>kcal</span></div>
+        <div class="macro-goal">Goal: 1800 kcal</div>
+        <div class="macro-bar-wrap"><div class="macro-bar" style="width:0%"></div></div>
+      </div>
+      <div class="macro-card fat">
+        <div class="macro-label">Fat</div>
+        <div class="macro-value">0 <span>g</span></div>
+        <div class="macro-goal">Goal: 140g</div>
+        <div class="macro-bar-wrap"><div class="macro-bar" style="width:0%"></div></div>
+      </div>
+      <div class="macro-card protein">
+        <div class="macro-label">Protein</div>
+        <div class="macro-value">0 <span>g</span></div>
+        <div class="macro-goal">Goal: 130g</div>
+        <div class="macro-bar-wrap"><div class="macro-bar" style="width:0%"></div></div>
+      </div>
+      <div class="macro-card carbs">
+        <div class="macro-label">Net Carbs</div>
+        <div class="macro-value">0 <span>g net</span></div>
+        <div class="macro-goal">Goal: 20g</div>
+        <div class="macro-bar-wrap"><div class="macro-bar" style="width:0%"></div></div>
+      </div>
+    </div>
+
+    <!-- Main grid: add food + log -->
+    <div class="main-grid">
+
+      <!-- Add Food -->
+      <div class="card">
+        <h2>Add Food</h2>
+
+        <div id="search-section">
+          <div class="search-wrap" id="food-search-wrap">
+            <input type="text" id="food-search" placeholder="Search food (e.g. chicken, avocado, eggs…)" autocomplete="off" />
+            <div class="autocomplete" id="autocomplete-list" style="display:none"></div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="gram-amount">Amount (g / ml)</label>
+              <input type="number" id="gram-amount" placeholder="100" min="1" max="2000" style="width:110px" />
+            </div>
+          </div>
+        </div>
+
+        <!-- Preview -->
+        <div class="preview-box" id="food-preview">
+          <div class="preview-name"></div>
+          <div class="preview-macros"></div>
+        </div>
+
+        <!-- Manual entry -->
+        <button class="toggle-manual" id="toggle-manual-btn">+ Enter macros manually</button>
+        <div class="manual-fields" id="manual-fields">
+          <div class="form-group" style="margin-bottom:8px">
+            <label for="manual-name">Food name</label>
+            <input type="text" id="manual-name" placeholder="My custom food" />
+          </div>
+          <div class="manual-grid">
+            <div class="form-group">
+              <label for="manual-cal">Calories</label>
+              <input type="number" id="manual-cal" placeholder="0" min="0" />
+            </div>
+            <div class="form-group">
+              <label for="manual-fat">Fat (g)</label>
+              <input type="number" id="manual-fat" placeholder="0" min="0" />
+            </div>
+            <div class="form-group">
+              <label for="manual-prot">Protein (g)</label>
+              <input type="number" id="manual-prot" placeholder="0" min="0" />
+            </div>
+            <div class="form-group">
+              <label for="manual-carbs">Total Carbs (g)</label>
+              <input type="number" id="manual-carbs" placeholder="0" min="0" />
+            </div>
+            <div class="form-group">
+              <label for="manual-fiber">Fiber (g)</label>
+              <input type="number" id="manual-fiber" placeholder="0" min="0" />
+            </div>
+          </div>
+        </div>
+
+        <button class="btn btn-success" id="add-food-btn" style="width:100%;margin-top:4px">Add to Log</button>
+      </div>
+
+      <!-- Food Log -->
+      <div class="card">
+        <h2>Food Log</h2>
+        <!-- Macro split bar -->
+        <div class="macro-split">
+          <div class="split-bar" id="bar-fat"  style="background:var(--fat-color);flex:1"></div>
+          <div class="split-bar" id="bar-prot" style="background:var(--protein-color);flex:1"></div>
+          <div class="split-bar" id="bar-carb" style="background:var(--carb-color);flex:1"></div>
+        </div>
+        <div class="split-legend">
+          <div class="legend-item"><span class="dot" style="background:var(--fat-color)"></span><span id="legend-fat">Fat 33%</span></div>
+          <div class="legend-item"><span class="dot" style="background:var(--protein-color)"></span><span id="legend-prot">Protein 33%</span></div>
+          <div class="legend-item"><span class="dot" style="background:var(--carb-color)"></span><span id="legend-carb">Carbs 33%</span></div>
+        </div>
+        <div style="height:12px"></div>
+        <div class="log-list" id="log-list">
+          <div class="empty-log">No food logged today.<br>Add your first meal!</div>
+        </div>
+      </div>
+
+      <!-- Weight Tracker -->
+      <div class="card">
+        <h2>Weight Tracker</h2>
+        <div class="weight-row">
+          <div class="form-group">
+            <label for="weight-input">Today's weight (lbs)</label>
+            <input type="number" id="weight-input" placeholder="e.g. 210" min="50" max="600" step="0.1" />
+          </div>
+          <button class="btn btn-primary" id="log-weight-btn">Log Weight</button>
+        </div>
+        <div class="weight-history" id="weight-history">
+          <div class="empty-log" style="padding:16px 0">No weight entries yet.</div>
+        </div>
+      </div>
+
+      <!-- Keto Tips -->
+      <div class="card">
+        <h2>Keto Guidelines</h2>
+        <ul class="tips-list">
+          <li><strong>Net Carbs &lt; 20g/day</strong> — Total carbs minus fiber. This is the key number for ketosis.</li>
+          <li><strong>Fat = 70–80% of calories</strong> — Fat is your primary fuel source on keto.</li>
+          <li><strong>Protein = 15–25%</strong> — ~0.7–1g per lb of lean body mass. Too much can raise blood sugar.</li>
+          <li><strong>Stay hydrated</strong> — Drink 8+ cups of water. Electrolytes (sodium, potassium, magnesium) are essential.</li>
+          <li><strong>Your goal: 185 lbs</strong> — A typical deficit of 500 kcal/day leads to ~1 lb/week loss.</li>
+          <li><strong>Keto flu</strong> — First 1–2 weeks may feel rough. Push through — it's temporary electrolyte depletion.</li>
+          <li><strong>Best keto foods</strong> — Meat, fish, eggs, cheese, avocado, low-carb vegetables, nuts, olive oil.</li>
+        </ul>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script src="foods.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
