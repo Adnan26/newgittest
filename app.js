@@ -212,6 +212,23 @@ function renderWeights() {
   }).join('');
 }
 
+// ── Amount helpers ────────────────────────────────────────────────────────────
+let lastAmountInput = 'grams';
+
+function getAmountInGrams() {
+  if (lastAmountInput === 'qty') {
+    const qty = parseFloat($('qty-amount').value);
+    if (qty > 0 && selectedFoodItem) return round(qty * selectedFoodItem.serving);
+  }
+  if (lastAmountInput === 'oz') {
+    const oz = parseFloat($('oz-amount').value);
+    if (oz > 0) return round(oz * 28.3495);
+  }
+  const g = parseFloat($('gram-amount').value);
+  if (g > 0) return g;
+  return selectedFoodItem ? selectedFoodItem.serving : 100;
+}
+
 // ── Autocomplete ──────────────────────────────────────────────────────────────
 let selectedFoodItem = null;
 let acIndex = -1;
@@ -269,11 +286,20 @@ function selectFood(idx) {
 function updatePreview() {
   const preview = $('food-preview');
   if (!selectedFoodItem) { preview.classList.remove('show'); return; }
-  const grams = parseFloat($('gram-amount').value) || selectedFoodItem.serving;
+  const grams = getAmountInGrams();
   const scaled = scaleMacros(selectedFoodItem, grams);
   const nc = calcNetCarbs(scaled);
+  const unit = selectedFoodItem.servingUnit.includes('ml') ? 'ml' : 'g';
+  let amountLabel = `${grams}${unit}`;
+  if (lastAmountInput === 'qty') {
+    const qty = parseFloat($('qty-amount').value) || 1;
+    amountLabel = `${qty} serving${qty !== 1 ? 's' : ''} (${grams}${unit})`;
+  } else if (lastAmountInput === 'oz') {
+    const oz = parseFloat($('oz-amount').value) || 0;
+    amountLabel = `${oz}oz (${grams}${unit})`;
+  }
   preview.classList.add('show');
-  preview.querySelector('.preview-name').textContent = `${scaled.name}  ·  ${grams}${selectedFoodItem.servingUnit.includes('ml') ? 'ml' : 'g'}`;
+  preview.querySelector('.preview-name').textContent = `${scaled.name}  ·  ${amountLabel}`;
   preview.querySelector('.preview-macros').innerHTML = `
     <span><span class="dot" style="background:var(--cal-color)"></span>${scaled.calories} kcal</span>
     <span><span class="dot" style="background:var(--fat-color)"></span>Fat ${scaled.fat}g</span>
@@ -309,8 +335,7 @@ function addFood() {
       showToast('⚠️ Tap a food from the dropdown list first');
       return;
     }
-    const grams = parseFloat($('gram-amount').value) || selectedFoodItem.serving;
-    $('gram-amount').value = grams;
+    const grams = getAmountInGrams();
     entry = scaleMacros(selectedFoodItem, grams);
   }
 
@@ -323,7 +348,10 @@ function addFood() {
   // Reset
   $('food-search').value = '';
   $('food-search').style.borderColor = '';
+  $('qty-amount').value = '';
+  $('oz-amount').value = '';
   $('gram-amount').value = '';
+  lastAmountInput = 'grams';
   selectedFoodItem = null;
   $('food-preview').classList.remove('show');
   $('add-food-btn').textContent = 'Add to Log';
@@ -424,7 +452,9 @@ document.addEventListener('DOMContentLoaded', () => {
   setupAutocomplete();
   render();
 
-  $('gram-amount').addEventListener('input', updatePreview);
+  $('qty-amount').addEventListener('input', () => { lastAmountInput = 'qty'; updatePreview(); });
+  $('oz-amount').addEventListener('input',  () => { lastAmountInput = 'oz';  updatePreview(); });
+  $('gram-amount').addEventListener('input', () => { lastAmountInput = 'grams'; updatePreview(); });
   $('add-food-btn').addEventListener('click', addFood);
   $('log-weight-btn').addEventListener('click', logWeight);
   $('save-goal-btn').addEventListener('click', saveGoal);

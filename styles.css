@@ -234,6 +234,17 @@ header {
 .autocomplete-item .macro-hint { color: var(--muted); font-size: 0.8rem; white-space: nowrap; }
 
 .form-row { display: flex; gap: 8px; align-items: flex-end; margin-bottom: 10px; flex-wrap: wrap; }
+
+.amount-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+}
+.amount-row .form-group input { width: 90px; }
+.amount-or { color: var(--muted); font-size: 0.8rem; padding-bottom: 9px; user-select: none; }
+
 .form-group { display: flex; flex-direction: column; gap: 4px; }
 .form-group label { font-size: 0.8rem; color: var(--muted); }
 .form-group input, .form-group select {

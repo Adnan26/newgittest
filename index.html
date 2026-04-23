@@ -81,10 +81,20 @@
             <input type="text" id="food-search" placeholder="Search food (e.g. chicken, avocado, eggs…)" autocomplete="off" />
             <div class="autocomplete" id="autocomplete-list" style="display:none"></div>
           </div>
-          <div class="form-row">
+          <div class="amount-row">
             <div class="form-group">
-              <label for="gram-amount">Amount (g / ml)</label>
-              <input type="number" id="gram-amount" placeholder="100" min="1" max="2000" style="width:110px" />
+              <label for="qty-amount">Qty / Servings</label>
+              <input type="number" id="qty-amount" placeholder="e.g. 3" min="0.25" step="0.25" />
+            </div>
+            <div class="amount-or">or</div>
+            <div class="form-group">
+              <label for="oz-amount">Ounces (oz)</label>
+              <input type="number" id="oz-amount" placeholder="e.g. 4" min="0" step="0.1" />
+            </div>
+            <div class="amount-or">or</div>
+            <div class="form-group">
+              <label for="gram-amount">Grams (g)</label>
+              <input type="number" id="gram-amount" placeholder="100" min="1" max="2000" />
             </div>
           </div>
         </div>
